@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require 'ostruct'
+require 'optparse'
+
+options = OpenStruct.new(amount: 6, path: nil)
+
+OptionParser.new do |o|
+  o.on('-fPATH', '--wordlist-file=PATH', 'Wordlist file path, required') do |value|
+    options.path = value
+  end
+
+  o.on('-nAMOUNT', '--words=AMOUNT', Integer, "Number of words to generate, default: #{options.amount}") do |value|
+    options.amount = value
+  end
+end.parse!
+
+abort('missing wordlist file path') unless options.path
+
+data = {}
+lines = IO.read(options.path).lines.each
+
+loop do
+  break if lines.next.match(/^BEGIN_word_list_diceware/)
+end
+
+loop do
+  line = lines.next
+  break if line.match(/^END_word_list_diceware/)
+
+  _, dice, word = *line.match(/^(\d{5}) (.*)$/)
+  data[dice] = word
+end
+
+password = options.amount.times.map do
+  dice = 5.times.map { rand(1..6).to_s }.join('')
+  data[dice]
+end.join('-')
+
+puts password
